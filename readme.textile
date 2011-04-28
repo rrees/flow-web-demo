@@ -1,0 +1,4 @@
+h1. Flowchart demo
+
+This is an example of how to use a Neo4J REST server to provide a flow-based web question and answer application. The examples are based on the kinds of questions that are used to create characters in the Morrowind/Fallout games from Bethesda.
+
