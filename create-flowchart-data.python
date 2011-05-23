@@ -1,4 +1,5 @@
 from neo4jrestclient import GraphDatabase
+from models import Flow
 
 db = GraphDatabase("http://localhost:7474/db/data/")
 
@@ -6,16 +7,12 @@ root = db.node[0]
 
 existing_flows =  root.relationships.outgoing(["Flow"])
 
-class Flow:
-	def __init__(self, title, description):
-		self.title = title
-		self.description = description
 
-flows = [Flow("Morrowind-style", "A fantasy character creation process like the one at the start of the game Morrowind.")]
+flows = [Flow('morrowind', "Morrowind-style", "A fantasy character creation process like the one at the start of the game Morrowind.")]
 
 for flow in flows:
 	if not len([link for link in existing_flows if link.properties['title'] == flow.title]) > 0:
-		new_flow_node = db.nodes.create(title = flow.title, description = flow.description)
-		root.relationships.create("Flow", new_flow_node, title = flow.title)
+		new_flow_node = db.nodes.create(id = flow.id, title = flow.title, description = flow.description)
+		root.relationships.create("Flow", new_flow_node)
 		
 		print "Created new Flow: %s" % flow.title
