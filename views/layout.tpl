@@ -6,7 +6,7 @@
 		body {
 			width: 80%;
 			margin: auto;
-			font-family: san-serif;
+			font-family: 'Helvetica Neue',san-serif;
 		}
 	</style>
 </head>
