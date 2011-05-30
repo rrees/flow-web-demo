@@ -7,7 +7,7 @@
 
 <ul>
 	% for flow in flows:
-	<li><a href="/start/{{flow['id']}}">{{flow['title']}}</a></li>
+	<li><a href="/flow/{{flow['id']}}">{{flow['title']}}</a></li>
 	% end
 	
 </ul>

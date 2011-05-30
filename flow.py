@@ -1,60 +1,78 @@
 from bottle import *
 
+from finders import find_flow, find_question
+
 from neo4jrestclient import GraphDatabase
-from models import Flow
-
 db = GraphDatabase("http://localhost:7474/db/data/")
-
-def find_flow(id):
-	matching_flows = [rel.end for rel in db.nodes[0].relationships.outgoing(["Flow"]) if rel.end['id'] == id]
-	
-	if len(matching_flows) == 0:
-		return None
-		
-	return matching_flows[0]
-	
-def find_question(flow_id, question_id):
-	flow_start = [rel.end for rel in db.nodes[0].relationships.outgoing(["Flow"]) if rel.end['id'] == flow_id]
-	
-	if len(flow_start) == 0:
-		return None
-		
-	flow_start = flow_start[0]
-		
-	questions = [rel.end for rel in flow_start.relationships.outgoing(['Question']) if rel.end.properties['id'] == question_id]
-	
-	
-	if len(questions) == 0:
-		return None
-	
-	return questions[0]
 
 @route('/')
 def front_page():
 	flows = [rel.end for rel in db.nodes[0].relationships.outgoing(["Flow"])]
 	return template('index', flows = flows)
 
-@route('/start/:id')
-def start(id):
+@route('/flow/:id')
+def flows(id):
 	flow_start = find_flow(id)
 	
-	if not flow_start == None:
-		questions = [rel.end.properties for rel in flow_start.relationships.outgoing(['Question'])]
+	if flow_start == None:
+		abort(404, 'That flow is unrecognised')
+
+	questions = [rel.end.properties for rel in flow_start.relationships.outgoing(['Question'])]
 		
-		return template('questionnaire', questionnaire = flow_start, questions = questions)
+	return template('questionnaire', questionnaire = flow_start, questions = questions)
 
 @route('/flow/:flow_id/question/:question_id')
 def question(flow_id, question_id):
 	
 	flow_start = find_flow(flow_id)
 	
-	if not flow_start == None:
-		question = find_question(flow_id, question_id)
+	if flow_start == None:
+		abort(404, 'That flow is unrecognised')
+	
+	question = find_question(flow_id, question_id)
 		
-		if not question == None:
-			answers = [answer.end.properties for answer in question.relationships.outgoing(['Answer'])]
+	if question == None:
+		abort(404, 'That question is unrecognised')
+
+	answers = [answer.end.properties for answer in question.relationships.outgoing(['Answer'])]
+	
+	return template('question', flow = flow_start, question = question, answers = answers)
 			
-			return template('question', flow = flow_start, question = question, answers = answers)
+@route('/start/flow/:flow_id')
+def start(flow_id):
+	from uuid import uuid4
+	flow_start = find_flow(flow_id)
+	
+	if flow_start == None:
+		abort(404, 'That flow is unrecognised')
+		
+	first_question = [rel.end for rel in flow_start.relationships.outgoing(['First'])]
+	
+	if len(first_question) == 0:
+		abort(404, 'The flow has no first question identified')
+		
+	first_question = first_question[0]
+	
+	character_id = uuid4().hex
+	new_character = db.nodes.create(id = character_id)
+	
+	flow_start.relationships.create("Character", new_character)
+	
+	new_character.relationships.create("Current", first_question)
+	
+	if not 'characters' in db.nodes.indexes:
+		db.nodes.indexes.create('characters')
+		
+	db.nodes.indexes.get('characters').add('id', character_id, new_character)
+	
+	redirect('/character/%s' % character_id)
+	
+@route('/character/:character_id')
+def show_character(character_id):
+	
+	character = db.nodes.indexes.get('characters')['id'][character_id].pop()
+	
+	return template('character', character = character.properties)
 	
 debug(True)
 run(reloader = True)
