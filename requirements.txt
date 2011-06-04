@@ -1,2 +1,3 @@
 bottle
+httplib2
 neo4jrestclient

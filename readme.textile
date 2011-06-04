@@ -2,3 +2,19 @@ h1. Flowchart demo
 
 This is an example of how to use a Neo4J REST server to provide a flow-based web question and answer application. The examples are based on the kinds of questions that are used to create characters in the Morrowind/Fallout games from Bethesda.
 
+h2. Installing and working with the code
+
+You will need a local instance of the Neo4J server, you can get that from the "Neo Technologies site":http://neo4j.org/download/.
+
+Download and unpack the server, then from the root directory just type: bin/neo4j start.
+
+To start the demo app:
+
+* Create a virtualenv locally: virtualenv ve
+* Activate the virtualenv: source ve/bin/activate
+* Install the required libraries: pip install -r requirements.txt
+* Populate the database with the initial flow data: python create-flowchart-data.py
+* Start the web app: python flow.py
+
+You should now have a graph database with a web console at http://localhost:7474 and a web app at http://localhost:8080.
+
