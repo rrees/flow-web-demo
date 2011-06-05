@@ -10,6 +10,8 @@ Download and unpack the server, then from the root directory just type: bin/neo4
 
 To start the demo app:
 
+* Clone the github repo: git clone https://github.com/rrees/flow-web-demo.git
+* cd flow-web-demo
 * Create a virtualenv locally: virtualenv ve
 * Activate the virtualenv: source ve/bin/activate
 * Install the required libraries: pip install -r requirements.txt
