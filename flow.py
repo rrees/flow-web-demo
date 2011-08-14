@@ -7,7 +7,8 @@ db = GraphDatabase("http://localhost:7474/db/data/")
 
 @route('/')
 def front_page():
-	flows = [rel.end for rel in db.nodes[0].relationships.outgoing(["Flow"])]
+	flows = db.nodes.indexes.get('flows')['flow']['start'][:]
+	print flows
 	return template('index', flows = flows)
 
 @route('/flow/:id')

@@ -11,8 +11,9 @@ class Question:
 		self.answers = answers
 		
 class Answer:
-	def __init__(self, id, text, reward_type, reward_value):
+	def __init__(self, id, text, reward_type, reward_value, next = None):
 		self.id = id
 		self.text = text
 		self.reward_type = reward_type
 		self.reward_value = reward_value
+		self.next = next
