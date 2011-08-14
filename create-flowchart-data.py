@@ -4,6 +4,9 @@ from models import Flow, Question, Answer
 flows = [Flow('morrowind', "Morrowind-style", "A fantasy character creation process like the one at the start of the game Morrowind.")]
 
 def morrowind_flow(start_node):
+	flow_id = 'morrowind'
+	question_index = db.nodes.indexes.get('questions')
+	
 	q1 = Question(id = 'q1', text = 'What surrounded you when you were young?',
 		answers = [Answer(id = 'q1a1', text = 'The sea', reward_type = 'Background', reward_value = 'Coastal', next='q4'),
 			Answer(id = 'q1a2', text = 'Fields', reward_type = 'Background', reward_value = 'Rural', next = 'q2'),
@@ -25,28 +28,27 @@ def morrowind_flow(start_node):
 			Answer(id = 'q4a2', text = "No, I helped crew my father's boat.", reward_type = "Trait", reward_value = "Salty dog", next = 'q2'),
 			Answer(id = 'q4a3', text ="Yes, I would sail her whenever I could.", reward_type = "Skill", reward_value = "Sailor", next = 'q2')])
 		
-	questions = [q1, q2, q3,]
+	questions = [q1, q2, q3, q4,]
 	
 	current_questions = start_node.relationships.outgoing(['Question'])
 	
 	for question in questions:
-		if not question.id in [question.end.properties['id'] for question in current_questions]:
+		if not question.id in [q.end.properties['id'] for q in current_questions]:
 			new_question = db.nodes.create(id = question.id, text = question.text)
 			start_node.relationships.create('Question', new_question)
-			db.nodes.indexes.get("questions")['question'][question.id] = new_question
+			question_index[flow_id][question.id] = new_question
 	
-	question_index = db.nodes.indexes.get('questions')
 	
 	for question in questions:
-			question_node = question_index['question'][question.id][0]
+			question_node = question_index[flow_id][question.id][0]
 			for answer in question.answers:
 				answer_node = db.nodes.create(id = answer.id, text = answer.text)
 				reward_node = db.nodes.create(type = answer.reward_type, value = answer.reward_value)
 				answer_node.relationships.create('Reward', reward_node)
 				question_node.relationships.create('Answer', answer_node)
 				
-				if answer.next and question_index['question'][answer.next]:
-					answer_node.relationships.create('Next', question_index['question'][answer.next][0])
+				if answer.next and question_index[flow_id][answer.next]:
+					answer_node.relationships.create('Next', question_index[flow_id][answer.next][0])
 		
 		
 	if len(start_node.relationships.outgoing(['First'])) == 0:

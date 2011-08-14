@@ -24,6 +24,11 @@ def flows(id):
 
 @route('/flow/:flow_id/question/:question_id')
 def question(flow_id, question_id):
+	def next_question(answer):
+		decorated_answer = answer.properties
+		decorated_answer['next'] = answer.relationships.outgoing(['Next'])[0].end.properties
+		print decorated_answer['next']
+		return decorated_answer
 	
 	flow_start = find_flow(flow_id)
 	
@@ -35,10 +40,45 @@ def question(flow_id, question_id):
 	if question == None:
 		abort(404, 'That question is unrecognised')
 
-	answers = [answer.end.properties for answer in question.relationships.outgoing(['Answer'])]
+	answers = [answer.end for answer in question.relationships.outgoing(['Answer'])]
+	
+	answers = [answer.properties if not answer.relationships.outgoing(['Next']) else next_question(answer) for answer in answers]
 	
 	return template('question', flow = flow_start, question = question, answers = answers)
-			
+
+@route('/flow/:flow_id/question/:question_id/answer/:answer_id')
+def answer(flow_id, question_id, answer_id):
+
+	flow_start = find_flow(flow_id)
+
+	if flow_start == None:
+		abort(404, 'That flow is unrecognised')
+
+	question = find_question(flow_id, question_id)
+
+	if question == None:
+		abort(404, 'That question is unrecognised')
+
+	answers = [answer.end for answer in question.relationships.outgoing(['Answer']) if answer.end.properties['id'] == answer_id]
+	
+	if not len(answers) == 1:
+		abort(404, 'Answer not found')
+
+	answer = answers[0]
+	
+	next_questions = answer.relationships.outgoing(['Next'])
+	
+	if not next_questions:
+		return template('conclusion')
+	
+	next_question_id = next_questions[0].end['id']
+	
+	return redirect('/flow/%s/question/%s' % (flow_id, next_question_id))
+
+@route('/conclusion')
+def conclusion():
+	return template('conclusion')
+	
 @route('/start/flow/:flow_id')
 def start(flow_id):
 	from uuid import uuid4
