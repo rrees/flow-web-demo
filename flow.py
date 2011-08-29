@@ -108,12 +108,19 @@ def start(flow_id):
 	
 	redirect('/character/%s' % character_id)
 	
-@route('/character/:character_id')
+@get('/character/:character_id')
 def show_character(character_id):
 	
 	character = db.nodes.indexes.get('characters')['id'][character_id].pop()
 	
-	return template('character', character = character.properties)
+	current_question = character.relationships.outgoing(['Current'])
+
+	if len(current_question) == 0:
+		attributes = character.relationships.outgoing(['Attribute'])
+		return template('character', character = character.properties)
 	
+	current_question = current_question.pop().end
+	answers = current_question.relationships.outgoing(['Answer'])
+	return template('character_question.tpl', character = character.properties, current_question = current_question.properties, answers = [answer.end.properties for answer in answers])
 debug(True)
-run(reloader = True)
+run(reloader = True, port = 2222)
