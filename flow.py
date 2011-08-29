@@ -122,5 +122,10 @@ def show_character(character_id):
 	current_question = current_question.pop().end
 	answers = current_question.relationships.outgoing(['Answer'])
 	return template('character_question.tpl', character = character.properties, current_question = current_question.properties, answers = [answer.end.properties for answer in answers])
+
+@post('/character/:character_id')
+def record_answer(character_id):
+	redirect('/character/%s' % character_id)
+
 debug(True)
 run(reloader = True, port = 2222)
