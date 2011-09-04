@@ -23,3 +23,8 @@ def find_question(flow_id, question_id):
 	
 	return questions[0]
 
+def find_character(character_id):
+	return db.nodes.indexes.get('characters')['id'][character_id].pop()
+	
+def current_question(character):
+	return character.relationships.outgoing(['Current']).pop().end

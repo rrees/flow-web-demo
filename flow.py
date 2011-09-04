@@ -1,6 +1,6 @@
 from bottle import *
 
-from finders import find_flow, find_question
+import finders
 
 from neo4jrestclient import GraphDatabase
 db = GraphDatabase("http://localhost:7474/db/data/")
@@ -13,7 +13,7 @@ def front_page():
 
 @route('/flow/:id')
 def flows(id):
-	flow_start = find_flow(id)
+	flow_start = finders.find_flow(id)
 	
 	if flow_start == None:
 		abort(404, 'That flow is unrecognised')
@@ -27,15 +27,14 @@ def question(flow_id, question_id):
 	def next_question(answer):
 		decorated_answer = answer.properties
 		decorated_answer['next'] = answer.relationships.outgoing(['Next'])[0].end.properties
-		print decorated_answer['next']
 		return decorated_answer
 	
-	flow_start = find_flow(flow_id)
+	flow_start = finders.find_flow(flow_id)
 	
 	if flow_start == None:
 		abort(404, 'That flow is unrecognised')
 	
-	question = find_question(flow_id, question_id)
+	question = finders.find_question(flow_id, question_id)
 		
 	if question == None:
 		abort(404, 'That question is unrecognised')
@@ -49,12 +48,12 @@ def question(flow_id, question_id):
 @route('/flow/:flow_id/question/:question_id/answer/:answer_id')
 def answer(flow_id, question_id, answer_id):
 
-	flow_start = find_flow(flow_id)
+	flow_start = finders.find_flow(flow_id)
 
 	if flow_start == None:
 		abort(404, 'That flow is unrecognised')
 
-	question = find_question(flow_id, question_id)
+	question = finders.find_question(flow_id, question_id)
 
 	if question == None:
 		abort(404, 'That question is unrecognised')
@@ -82,7 +81,7 @@ def conclusion():
 @route('/start/flow/:flow_id')
 def start(flow_id):
 	from uuid import uuid4
-	flow_start = find_flow(flow_id)
+	flow_start = finders.find_flow(flow_id)
 	
 	if flow_start == None:
 		abort(404, 'That flow is unrecognised')
@@ -119,12 +118,27 @@ def show_character(character_id):
 		attributes = character.relationships.outgoing(['Attribute'])
 		return template('character', character = character.properties)
 	
-	current_question = current_question.pop().end
+	current_question = finders.current_question(character)
 	answers = current_question.relationships.outgoing(['Answer'])
 	return template('character_question.tpl', character = character.properties, current_question = current_question.properties, answers = [answer.end.properties for answer in answers])
 
 @post('/character/:character_id')
 def record_answer(character_id):
+	given_answer = request.params['answer']
+	character = finders.find_character(character_id)
+	current_question = finders.current_question(character)
+	answers = [answer.end for answer in current_question.relationships.outgoing(['Answer'])]
+	for answer in answers:
+		if answer.properties['id'] == given_answer:
+			for reward_rel in answer.relationships.outgoing(['Reward']):
+				reward = reward_rel.end
+				character.relationships.create("Attribute", reward)
+
+			character.relationships.outgoing(['Current']).pop().delete()
+			for next_question_rel in answer.relationships.outgoing(['Next']):
+				next_question = next_question_rel.end
+				character.relationships	.create('Current', next_question)
+				print "Next", next_question
 	redirect('/character/%s' % character_id)
 
 debug(True)
