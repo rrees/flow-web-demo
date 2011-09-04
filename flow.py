@@ -116,7 +116,7 @@ def show_character(character_id):
 
 	if len(current_question) == 0:
 		attributes = character.relationships.outgoing(['Attribute'])
-		return template('character', character = character.properties)
+		return template('character', character = character.properties, attributes = [attribute.end.properties for attribute in attributes])
 	
 	current_question = finders.current_question(character)
 	answers = current_question.relationships.outgoing(['Answer'])
